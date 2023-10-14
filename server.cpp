@@ -4,7 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-
+#include <dirent.h>
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
@@ -20,8 +20,8 @@ void receiveFile(int clientSocket) {
 
     // 响应客户端
     std::string response;
-    std::ofstream outputFile(filename, std::ios::out | std::ios::binary);
-    if (outputFile) {
+    //std::ofstream outputFile(filename, std::ios::out | std::ios::binary);
+    if (true) {
         response = "OK";
     } else {
         response = "Error";
@@ -46,19 +46,27 @@ void receiveFile(int clientSocket) {
 
     if (outputFile.is_open()) {
         std::cout << "Content appended successfully." << std::endl;
+        outputFile.close();
     } else {
         std::cout << "Unable to open file." << std::endl;
     }
+                
+       // 进入子目录
+    int chdirResult = chdir("upload_dir");
+    if (chdirResult == -1) {
+        std::cerr << "Failed to change directory" << std::endl;
+    }
 
-                std::fstream outputFile1("upload"+filePath, std::ios::out | std::ios::app); // 打开文件并使用追加模式
+                std::fstream outputFile1("upload"+filePath, std::ios::out | std::ios::binary); // 打开文件并使用追加模式
                 // 写入文件
                 outputFile1.write(buffer, bytesRead);
+                outputFile1.close();
             }
         }
     
 
     // 关闭文件
-        outputFile.close();
+        //outputFile.close();
         
         std::cout << "File received and saved successfully" << std::endl;
     } else {
@@ -69,10 +77,21 @@ void receiveFile(int clientSocket) {
 void sendFile(int clientSocket, const std::string& filename) {
     char buffer[BUFFER_SIZE] = {0};
     
+    std::cout << filename.substr(10,filename.size());
+
     // 发送文件名
     send(clientSocket, filename.c_str(), filename.length(), 0);
     
-    //std::cout << filename.substr(10,filename.size());
+    
+
+    //打开目录
+    int chdirResult = chdir("upload_dir");
+    if (chdirResult == -1) {
+        std::cerr << "Failed to change directory" << std::endl;
+    }
+    else{
+        std::cout << "access to dir"<< std::endl;
+    }
 
     // 打开文件进行读取
     std::ifstream file(filename.substr(10,filename.size()), std::ios::in | std::ios::binary);
@@ -167,12 +186,11 @@ int main() {
     int h = read(newSocket,rec,6);
     // 文件上传
     std::string flag = std::string(rec);
-    std::cout << rec;
+    //std::cout << rec;
     if(flag == "upload")
     {
-   // std::cout << "yes";
     receiveFile(newSocket);
-    
+    close(newSocket);
     }
     else
     // 文件下载
@@ -180,6 +198,7 @@ int main() {
     
     // 关闭套接字
     close(newSocket);
+    
     close(serverSocket);
     
     return 0;

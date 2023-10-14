@@ -4,6 +4,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <dirent.h>
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
@@ -61,10 +62,19 @@ void receiveFile(int clientSocket, const std::string& filename) {
     
     // 等待服务端响应
     char response[BUFFER_SIZE] = {0};
+    // std::cout << "1"<<std::endl;
     int valread = read(clientSocket, response, BUFFER_SIZE);
+    // std::cout << "2"<<std::endl;
     response[valread] = '\0';
     
     if (std::string(response).find("download")) {
+        //打开目录
+        int chdirResult = chdir("download_dir");
+    if (chdirResult == -1) {
+        std::cerr << "Failed to change directory" << std::endl;
+    }
+
+
         // 打开文件进行写入
         std::ofstream file("download"+request, std::ios::out | std::ios::binary);
         if (!file) {
@@ -84,6 +94,26 @@ void receiveFile(int clientSocket, const std::string& filename) {
     } else {
         std::cerr << "Server rejected the download request" << std::endl;
     }
+}
+
+void dirlist(std::string dirname)
+{
+     // 打开目录
+    DIR* dir = opendir(dirname.c_str());
+    if (dir == nullptr) {
+        std::cerr << "Failed to open directory" << std::endl;
+    }
+
+    // 读取目录中的条目
+    dirent* entry;
+    while ((entry = readdir(dir)) != nullptr) {
+        // 处理目录条目
+        std::cout << entry->d_name << std::endl;
+    }
+
+    // 关闭目录
+    closedir(dir);
+
 }
 
 int main() {
@@ -112,7 +142,7 @@ int main() {
     }
     while(true)
     {
-    std::cout << "Enter 'upload' to upload a file or 'download' to download a file or 'q' to exit: ";
+    std::cout << "Enter 'upload' to upload a file or 'download' to download a file or 'list' to list all files of the dir or 'q' to exit: ";
     std::string choice;
     std::cin >> choice;
     
@@ -130,6 +160,14 @@ int main() {
     else if(choice=="q")
     {
         break;
+    }
+
+    else if(choice == "list")
+    {
+        std::string dirname;
+        std::cout << "Enter the dirname to list: ";
+        std::cin >> dirname;
+        dirlist(dirname);
     }    
      else {
         std::cerr << "Invalid choice" << std::endl;
