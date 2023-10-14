@@ -1,0 +1,142 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#define PORT 8080
+#define BUFFER_SIZE 1024
+
+void sendFile(int clientSocket, const std::string& filename) {
+    char* buffer = new char[BUFFER_SIZE];
+
+    send(clientSocket, "upload", 6, 0);
+    // 发送文件上传请求
+    std::string request = filename;
+    send(clientSocket, ("upload" + request).c_str(), ("upload" + request).length(), 0);
+    
+    
+    // 等待服务端响应
+    char response[BUFFER_SIZE] = {0};
+    int valread = read(clientSocket, response, BUFFER_SIZE);
+    response[valread] = '\0';
+
+
+
+    if (std::string(response) == "OK") {
+        // 打开文件进行读取
+        std::ifstream file(request, std::ios::in | std::ios::binary);
+        if (!file) {
+            std::cerr << "Failed to open file" << std::endl;
+            return;
+        }
+
+        file.seekg(0, std::ios::end);
+        std::streampos fileSize = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        // 从文件读取内容并发送给服务端
+        while (file.read(buffer, fileSize)) {
+            send(clientSocket, buffer, file.gcount(), 0);
+            std::fill(buffer, buffer+BUFFER_SIZE, 0); // 清空缓冲区
+        }
+
+        
+        // 关闭文件
+        file.close();
+        
+        std::cout << "File sent successfully" << std::endl;
+    } else {
+        std::cerr << "Server rejected the upload request" << std::endl;
+    }
+}
+
+void receiveFile(int clientSocket, const std::string& filename) {
+    char buffer[BUFFER_SIZE] = {0};
+
+    send(clientSocket, "download", 8, 0);
+    // 发送文件下载请求
+    std::string request =filename;
+    send(clientSocket, ( "download" + request).c_str(), ( "download" + request).length(), 0);
+    
+    // 等待服务端响应
+    char response[BUFFER_SIZE] = {0};
+    int valread = read(clientSocket, response, BUFFER_SIZE);
+    response[valread] = '\0';
+    
+    if (std::string(response).find("download")) {
+        // 打开文件进行写入
+        std::ofstream file("download"+request, std::ios::out | std::ios::binary);
+        if (!file) {
+            std::cerr << "Failed to open file" << std::endl;
+            return;
+        }
+        
+        // 从服务端接收文件内容并写入文件
+        while ((valread = read(clientSocket, buffer, BUFFER_SIZE)) > 0) {
+            file.write(buffer, valread);
+        }
+        
+        // 关闭文件
+        file.close();
+        
+        std::cout << "File received successfully" << std::endl;
+    } else {
+        std::cerr << "Server rejected the download request" << std::endl;
+    }
+}
+
+int main() {
+    int clientSocket;
+    struct sockaddr_in serverAddress;
+
+    // 创建套接字
+    if ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+        std::cerr << "Socket creation error" << std::endl;
+        return -1;
+    }
+    
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(PORT);
+    
+    // 将IPv4地址从字符串转换为二进制形式
+    if (inet_pton(AF_INET, "192.168.208.129", &serverAddress.sin_addr) <= 0) {
+        std::cerr << "Invalid address/ Address not supported" << std::endl;
+        return -1;
+    }
+    
+    // 连接到服务器
+    if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
+        std::cerr << "Connection Failed" << std::endl;
+        return -1;
+    }
+    while(true)
+    {
+    std::cout << "Enter 'upload' to upload a file or 'download' to download a file or 'q' to exit: ";
+    std::string choice;
+    std::cin >> choice;
+    
+    if (choice == "upload") {
+        std::string filename;
+        std::cout << "Enter the filename to upload: ";
+        std::cin >> filename;
+        sendFile(clientSocket, filename);
+    } else if (choice == "download") {
+        std::string filename;
+        std::cout << "Enter the filename to download: ";
+        std::cin >> filename;
+        receiveFile(clientSocket, filename);
+    }
+    else if(choice=="q")
+    {
+        break;
+    }    
+     else {
+        std::cerr << "Invalid choice" << std::endl;
+    }
+    }
+    // 关闭套接字
+    close(clientSocket);
+    
+    return 0;
+}
