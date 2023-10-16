@@ -71,7 +71,7 @@ void receiveFile(int clientSocket, const std::string& filename) {
         //打开目录
         int chdirResult = chdir("download_dir");
     if (chdirResult == -1) {
-        std::cerr << "Failed to change directory" << std::endl;
+        std::cerr << "Failed to change directory4" << std::endl;
     }
 
 
@@ -89,7 +89,7 @@ void receiveFile(int clientSocket, const std::string& filename) {
         
         // 关闭文件
         file.close();
-        
+        chdir("..");
         std::cout << "File received successfully" << std::endl;
     } else {
         std::cerr << "Server rejected the download request" << std::endl;
@@ -101,7 +101,7 @@ void dirlist(std::string dirname)
      // 打开目录
     DIR* dir = opendir(dirname.c_str());
     if (dir == nullptr) {
-        std::cerr << "Failed to open directory" << std::endl;
+        std::cerr << "Failed to open directory3" << std::endl;
     }
 
     // 读取目录中的条目
@@ -119,7 +119,9 @@ void dirlist(std::string dirname)
 int main() {
     int clientSocket;
     struct sockaddr_in serverAddress;
-
+  
+      while(true)
+    {
     // 创建套接字
     if ((clientSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         std::cerr << "Socket creation error" << std::endl;
@@ -134,14 +136,14 @@ int main() {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return -1;
     }
+  
     
     // 连接到服务器
     if (connect(clientSocket, (struct sockaddr *)&serverAddress, sizeof(serverAddress)) < 0) {
         std::cerr << "Connection Failed" << std::endl;
         return -1;
     }
-    while(true)
-    {
+  
     std::cout << "Enter 'upload' to upload a file or 'download' to download a file or 'list' to list all files of the dir or 'q' to exit: ";
     std::string choice;
     std::cin >> choice;
@@ -172,9 +174,10 @@ int main() {
      else {
         std::cerr << "Invalid choice" << std::endl;
     }
-    }
-    // 关闭套接字
+        // 关闭套接字
     close(clientSocket);
-    
+    }
+        
+
     return 0;
 }

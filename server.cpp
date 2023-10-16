@@ -30,44 +30,42 @@ void receiveFile(int clientSocket) {
     
     // 如果响应为 "OK"，则接收并保存文件内容
     if (response == "OK") {
-        while (true) {
+       
             // 接收文件内容
-            size_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
-            if (bytesRead == -1) {
-                perror("recv failed");
-                break;
-            } else if (bytesRead == 0) {
-                // 客户端已关闭连接
-                break;
-            } else {
+            // size_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
+            // if (bytesRead == -1) {
+            //     perror("recv failed");
+                
+            // } else if (bytesRead == 0) {
+            //     // 客户端已关闭连接
+            //     perror("客户端已断开");
+            // } else {
 
                  std::string filePath = "file.txt"; // 文件名
-    std::fstream outputFile(filePath, std::ios::out | std::ios::app); // 打开文件并使用追加模式
+    // std::fstream outputFile(filePath, std::ios::out | std::ios::app); // 打开文件并使用追加模式
 
-    if (outputFile.is_open()) {
-        std::cout << "Content appended successfully." << std::endl;
-        outputFile.close();
-    } else {
-        std::cout << "Unable to open file." << std::endl;
-    }
+    // if (outputFile.is_open()) {
+    //     std::cout << "Content appended successfully." << std::endl;
+    //     outputFile.close();
+    // } else {
+    //     std::cout << "Unable to open file." << std::endl;
+    // }
                 
        // 进入子目录
     int chdirResult = chdir("upload_dir");
     if (chdirResult == -1) {
-        std::cerr << "Failed to change directory" << std::endl;
+        std::cerr << "Failed to change directory1" << std::endl;
     }
 
                 std::fstream outputFile1("upload"+filePath, std::ios::out | std::ios::binary); // 打开文件并使用追加模式
                 // 写入文件
-                outputFile1.write(buffer, bytesRead);
-                outputFile1.close();
-            }
+                while ((valread = read(clientSocket, buffer, BUFFER_SIZE)) > 0) {
+            outputFile1.write(buffer, valread);
         }
-    
-
-    // 关闭文件
-        //outputFile.close();
-        
+                outputFile1.close();
+                
+    // 回退到父目录
+        chdir("..");
         std::cout << "File received and saved successfully" << std::endl;
     } else {
         std::cerr << "Failed to receive file" << std::endl;
@@ -77,7 +75,7 @@ void receiveFile(int clientSocket) {
 void sendFile(int clientSocket, const std::string& filename) {
     char buffer[BUFFER_SIZE] = {0};
     
-    std::cout << filename.substr(10,filename.size());
+    std::cout << filename.substr(10,filename.size()) << std::endl;
 
     // 发送文件名
     send(clientSocket, filename.c_str(), filename.length(), 0);
@@ -87,7 +85,7 @@ void sendFile(int clientSocket, const std::string& filename) {
     //打开目录
     int chdirResult = chdir("upload_dir");
     if (chdirResult == -1) {
-        std::cerr << "Failed to change directory" << std::endl;
+        std::cerr << "Failed to change directory2" << std::endl;
     }
     else{
         std::cout << "access to dir"<< std::endl;
@@ -112,7 +110,7 @@ void sendFile(int clientSocket, const std::string& filename) {
 
         // 关闭文件
         file.close();
-
+        chdir("..");
     std::cout << "File sent successfully" << std::endl;
 }
 
@@ -148,7 +146,7 @@ int main() {
     struct sockaddr_in address;
     int opt = 1;
     int addrlen = sizeof(address);
-
+while(true){
     // 创建套接字
     if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
         perror("socket failed");
@@ -170,12 +168,14 @@ int main() {
         exit(EXIT_FAILURE);
     }
     
+    
     // 监听连接请求
     if (listen(serverSocket, 3) < 0) {
         perror("listen failed");
         exit(EXIT_FAILURE);
     }
     
+
     // 接受连接请求
     if ((newSocket = accept(serverSocket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
         perror("accept failed");
@@ -200,6 +200,6 @@ int main() {
     close(newSocket);
     
     close(serverSocket);
-    
+}
     return 0;
 }
