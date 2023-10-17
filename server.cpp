@@ -78,9 +78,11 @@ void sendFile(int clientSocket, const std::string& filename) {
     std::cout << filename.substr(10,filename.size()) << std::endl;
 
     // 发送文件名
-    send(clientSocket, filename.c_str(), filename.length(), 0);
+   if (send(clientSocket, filename.c_str(), filename.length(), 0)<0){
+    std::cout<<"failed to send"<<std::endl;
+   };
     
-    
+
 
     //打开目录
     int chdirResult = chdir("upload_dir");
@@ -145,10 +147,15 @@ int main() {
     int serverSocket, newSocket, valread;
     struct sockaddr_in address;
     int opt = 1;
-    int addrlen = sizeof(address);
-while(true){
+    socklen_t addrlen = sizeof(address);
+    pid_t childpid;
+
+    address.sin_family = AF_INET;
+    address.sin_addr.s_addr = INADDR_ANY;
+    address.sin_port = htons(PORT);
+    
     // 创建套接字
-    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) == 0) {
+    if ((serverSocket = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket failed");
         exit(EXIT_FAILURE);
     }
@@ -158,30 +165,25 @@ while(true){
         perror("setsockopt failed");
         exit(EXIT_FAILURE);
     }
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(PORT);
-    
+
     // 绑定套接字
     if (bind(serverSocket, (struct sockaddr *)&address, sizeof(address)) < 0) {
         perror("bind failed");
         exit(EXIT_FAILURE);
     }
     
-    
     // 监听连接请求
     if (listen(serverSocket, 3) < 0) {
         perror("listen failed");
         exit(EXIT_FAILURE);
     }
-    
-
+    while(1){
     // 接受连接请求
-    if ((newSocket = accept(serverSocket, (struct sockaddr *)&address, (socklen_t *)&addrlen)) < 0) {
+    if ((newSocket = accept(serverSocket, (struct sockaddr *)&address, &addrlen)) < 0) {
         perror("accept failed");
         exit(EXIT_FAILURE);
     }
-    
+   if((childpid=fork())==0) {
     char* rec = new char[10];
     int h = read(newSocket,rec,6);
     // 文件上传
@@ -197,9 +199,8 @@ while(true){
     handleClientRequest(newSocket);
     
     // 关闭套接字
+    }
     close(newSocket);
-    
-    close(serverSocket);
-}
+    }
     return 0;
 }
