@@ -5,6 +5,8 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <dirent.h>
+#include <signal.h>
+#include <sys/types.h>
 #define PORT 8080
 #define BUFFER_SIZE 1024
 
@@ -112,7 +114,7 @@ void sendFile(int clientSocket, const std::string& filename) {
 
         // 关闭文件
         file.close();
-        chdir("..");
+        //chdir("..");
     std::cout << "File sent successfully" << std::endl;
 }
 
@@ -192,15 +194,18 @@ int main() {
     if(flag == "upload")
     {
     receiveFile(newSocket);
-    close(newSocket);
+    exit(0);
     }
-    else
+    else{
     // 文件下载
     handleClientRequest(newSocket);
-    
+    exit(0);
     // 关闭套接字
     }
-    close(newSocket);
+    
     }
-    return 0;
+    close(newSocket);
+}
+close(serverSocket);
+return 0;
 }

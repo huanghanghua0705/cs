@@ -14,7 +14,10 @@ void sendFile(int clientSocket, const std::string& filename) {
     send(clientSocket, "upload", 6, 0);
     // 发送文件上传请求
     std::string request = filename;
-    send(clientSocket, ("upload" + request).c_str(), ("upload" + request).length(), 0);
+    
+    if(send(clientSocket, ("upload" + request).c_str(), ("upload" + request).length(), 0)<0){
+        std::cout<<"upload failed!"<<std::endl;
+    };
     
     
     // 等待服务端响应
@@ -132,7 +135,7 @@ int main() {
     serverAddress.sin_port = htons(PORT);
     
     // 将IPv4地址从字符串转换为二进制形式
-    if (inet_pton(AF_INET, "192.168.208.129", &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "192.168.153.128", &serverAddress.sin_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return -1;
     }
@@ -161,6 +164,7 @@ int main() {
     }
     else if(choice=="q")
     {
+        std::cout<<"niyituichu"<<std::endl;
         break;
     }
 
