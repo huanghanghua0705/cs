@@ -32,26 +32,6 @@ void receiveFile(int clientSocket) {
     
     // 如果响应为 "OK"，则接收并保存文件内容
     if (response == "OK") {
-       
-            // 接收文件内容
-            // size_t bytesRead = read(clientSocket, buffer, BUFFER_SIZE);
-            // if (bytesRead == -1) {
-            //     perror("recv failed");
-                
-            // } else if (bytesRead == 0) {
-            //     // 客户端已关闭连接
-            //     perror("客户端已断开");
-            // } else {
-
-                 std::string filePath = "file.txt"; // 文件名
-    // std::fstream outputFile(filePath, std::ios::out | std::ios::app); // 打开文件并使用追加模式
-
-    // if (outputFile.is_open()) {
-    //     std::cout << "Content appended successfully." << std::endl;
-    //     outputFile.close();
-    // } else {
-    //     std::cout << "Unable to open file." << std::endl;
-    // }
                 
        // 进入子目录
     int chdirResult = chdir("upload_dir");
@@ -59,7 +39,7 @@ void receiveFile(int clientSocket) {
         std::cerr << "Failed to change directory1" << std::endl;
     }
 
-                std::fstream outputFile1("upload"+filePath, std::ios::out | std::ios::binary); // 打开文件并使用追加模式
+                std::fstream outputFile1(filename, std::ios::out | std::ios::binary); // 打开文件并使用追加模式
                 // 写入文件
                 while ((valread = read(clientSocket, buffer, BUFFER_SIZE)) > 0) {
             outputFile1.write(buffer, valread);
@@ -67,7 +47,7 @@ void receiveFile(int clientSocket) {
                 outputFile1.close();
                 
     // 回退到父目录
-        chdir("..");
+        // chdir("..");
         std::cout << "File received and saved successfully" << std::endl;
     } else {
         std::cerr << "Failed to receive file" << std::endl;
@@ -77,7 +57,7 @@ void receiveFile(int clientSocket) {
 void sendFile(int clientSocket, const std::string& filename) {
     char buffer[BUFFER_SIZE] = {0};
     
-    std::cout << filename.substr(10,filename.size()) << std::endl;
+    // std::cout << filename << std::endl;
 
     // 发送文件名
    if (send(clientSocket, filename.c_str(), filename.length(), 0)<0){
@@ -96,7 +76,7 @@ void sendFile(int clientSocket, const std::string& filename) {
     }
 
     // 打开文件进行读取
-    std::ifstream file(filename.substr(10,filename.size()), std::ios::in | std::ios::binary);
+    std::ifstream file(filename.substr(8), std::ios::in | std::ios::binary);
     if (!file) {
         std::cerr << "Failed to open file1" << std::endl;
         return;
@@ -123,10 +103,12 @@ void handleClientRequest(int clientSocket) {
     char buffer[BUFFER_SIZE] = {0};
 
     // 接收客户端请求
-    int valread = read(clientSocket, buffer, BUFFER_SIZE);
-    std::string request(buffer, valread);
-
-    if (request.find("download")) {
+    int ll = recv(clientSocket,buffer,BUFFER_SIZE,0);
+    int valread = recv(clientSocket, buffer,BUFFER_SIZE,0);
+    std::string request(buffer);
+    std::cout << valread<<std::endl;
+    std::cout << request <<std::endl;
+    if (request == ("downloaduploadfile.txt")) {
         std::string filename = request;
         sendFile(clientSocket, filename);
     } 
@@ -186,11 +168,11 @@ int main() {
         exit(EXIT_FAILURE);
     }
    if((childpid=fork())==0) {
-    char* rec = new char[10];
-    int h = read(newSocket,rec,6);
+    char rec[10]={0};
+    int h = recv(newSocket,rec,6,0);
     // 文件上传
     std::string flag = std::string(rec);
-    //std::cout << rec;
+    std::cout << rec <<std::endl;
     if(flag == "upload")
     {
     receiveFile(newSocket);

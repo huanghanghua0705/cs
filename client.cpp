@@ -61,7 +61,7 @@ void receiveFile(int clientSocket, const std::string& filename) {
     send(clientSocket, "download", 8, 0);
     // 发送文件下载请求
     std::string request =filename;
-    send(clientSocket, ( "download" + request).c_str(), ( "download" + request).length(), 0);
+    send(clientSocket, ( "download" + request).c_str(), ( "download" + request).size(), 0);
     
     // 等待服务端响应
     char response[BUFFER_SIZE] = {0};
@@ -70,7 +70,7 @@ void receiveFile(int clientSocket, const std::string& filename) {
     // std::cout << "2"<<std::endl;
     response[valread] = '\0';
     
-    if (std::string(response).find("download")) {
+    if (std::string(response)==("downloaduploadfile.txt")) {
         //打开目录
         int chdirResult = chdir("download_dir");
     if (chdirResult == -1) {
@@ -135,7 +135,7 @@ int main() {
     serverAddress.sin_port = htons(PORT);
     
     // 将IPv4地址从字符串转换为二进制形式
-    if (inet_pton(AF_INET, "192.168.153.128", &serverAddress.sin_addr) <= 0) {
+    if (inet_pton(AF_INET, "192.168.208.129", &serverAddress.sin_addr) <= 0) {
         std::cerr << "Invalid address/ Address not supported" << std::endl;
         return -1;
     }
@@ -147,7 +147,7 @@ int main() {
         return -1;
     }
   
-    std::cout << "Enter 'upload' to upload a file or 'download' to download a file or 'list' to list all files of the dir or 'q' to exit: ";
+    std::cout << "Enter upload to 上传文件\nEnter download to 下载文件\nEnter list to 列出文件清单\nEnter q to 退出系统\n";
     std::string choice;
     std::cin >> choice;
     
@@ -164,7 +164,7 @@ int main() {
     }
     else if(choice=="q")
     {
-        std::cout<<"niyituichu"<<std::endl;
+        std::cout<<"晚安！！！！"<<std::endl;
         break;
     }
 
